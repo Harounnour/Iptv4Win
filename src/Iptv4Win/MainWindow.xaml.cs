@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     readonly LibVLC _lib = new();
     readonly MediaPlayer _player;
     readonly PlaylistStore _store = PlaylistStore.Load();
+    readonly ParentalControlService _parental = new();
     List<Channel> _all = new();
     StalkerClient? _stalker;
     bool _full;
@@ -25,6 +26,13 @@ public partial class MainWindow : Window
 
         Loaded += async (_, _) =>
         {
+            if (!_parental.IsConfigured)
+            {
+                var firstPin = PinDialog.Show(this, "Contrôle parental",
+                    "Créez le code PIN parental (4 à 6 chiffres). Les chaînes classées adultes seront masquées.", true);
+                if (firstPin == null) { Close(); return; }
+                _parental.SetPin(firstPin);
+            }
             Video.MediaPlayer = _player;
             var src = _store.Items.FirstOrDefault(x => x.Id == _store.LastUsedId) ?? _store.Items.FirstOrDefault();
             if (src == null) await OpenPlaylistsAsync();
@@ -42,11 +50,12 @@ public partial class MainWindow : Window
             _all = r.Channels;
             _stalker = r.Stalker;
 
+            var allowed = _all.Where(c => !_parental.IsAdult(c)).ToList();
             var groups = new List<string> { AllGroups };
-            groups.AddRange(_all.Select(c => c.Group).Where(g => !string.IsNullOrWhiteSpace(g)).Distinct().OrderBy(g => g));
+            groups.AddRange(allowed.Select(c => c.Group).Where(g => !string.IsNullOrWhiteSpace(g)).Distinct().OrderBy(g => g));
             GroupList.ItemsSource = groups;
             GroupList.SelectedIndex = 0;
-            StatusText.Text = $"{src.Name} : {_all.Count} chaînes";
+            StatusText.Text = $"{src.Name} : {allowed.Count} chaînes disponibles (contenu adulte filtré)";
         }
         catch (Exception ex)
         {
@@ -59,7 +68,7 @@ public partial class MainWindow : Window
         if (ChannelList == null) return;
         var g = GroupList.SelectedItem as string;
         var q = SearchBox.Text.Trim();
-        IEnumerable<Channel> r = _all;
+        IEnumerable<Channel> r = _all.Where(c => !_parental.IsAdult(c));
         if (g != null && g != AllGroups) r = r.Where(c => c.Group == g);
         if (q.Length > 0) r = r.Where(c => c.Name.Contains(q, StringComparison.CurrentCultureIgnoreCase));
         var list = r.ToList();
@@ -120,11 +129,35 @@ public partial class MainWindow : Window
 
     async void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ChannelList.SelectedItem is Channel ch) await PlayAsync(ch);
+        if (ChannelList.SelectedItem is Channel ch)
+        {
+            if (_parental.IsAdult(ch))
+            {
+                StatusText.Text = "Accès bloqué par le contrôle parental.";
+                ChannelList.SelectedItem = null;
+                return;
+            }
+            await PlayAsync(ch);
+        }
     }
 
     async void BtnPlaylists_Click(object sender, RoutedEventArgs e) => await OpenPlaylistsAsync();
     void BtnMute_Click(object sender, RoutedEventArgs e) => _player.Mute = !_player.Mute;
+
+    void BtnParental_Click(object sender, RoutedEventArgs e)
+    {
+        var current = PinDialog.Show(this, "Vérification parentale", "Saisissez le code PIN actuel.");
+        if (current == null) return;
+        if (!_parental.VerifyPin(current))
+        {
+            StatusText.Text = "Code PIN incorrect. Les protections restent actives.";
+            return;
+        }
+        var next = PinDialog.Show(this, "Modifier le code PIN", "Choisissez un nouveau code PIN (4 à 6 chiffres).", true);
+        if (next == null) return;
+        _parental.SetPin(next);
+        StatusText.Text = "Code PIN parental mis à jour. Le filtrage reste activé.";
+    }
     void BtnFull_Click(object sender, RoutedEventArgs e) => ToggleFullscreen();
 
     void Window_KeyDown(object sender, KeyEventArgs e)
