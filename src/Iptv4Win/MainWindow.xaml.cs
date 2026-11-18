@@ -198,6 +198,8 @@ public partial class MainWindow : Window
     }
 
     async void BtnPlaylists_Click(object sender, RoutedEventArgs e) => await OpenPlaylistsAsync();
+    void BtnWeather_Click(object sender, RoutedEventArgs e) => new WeatherWindow { Owner = this }.ShowDialog();
+    void BtnQuran_Click(object sender, RoutedEventArgs e) => new QuranWindow { Owner = this }.ShowDialog();
 
     void PlayAdjacent(int delta)
     {
