@@ -107,12 +107,12 @@ public sealed class QuranWindow : Window
     readonly Image _photo=new(){Width=100,Height=100,Stretch=Stretch.UniformToFill,Margin=new Thickness(0,8,0,8)};
     readonly TextBlock _status=new(){Text="Chargement de la liste des récitateurs…",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,12,0,12)};
     readonly LibVLC _lib=new("--no-video","--quiet","--network-caching=1500","--file-caching=1500");
-    readonly MediaPlayer _audio;
+    readonly LibVLCSharp.Shared.MediaPlayer _audio;
     Media? _audioMedia;
     List<Reciter> _reciters=new();
     public QuranWindow()
     {
-        _audio=new MediaPlayer(_lib) { Volume=100, Mute=false };
+        _audio=new LibVLCSharp.Shared.MediaPlayer(_lib) { Volume=100, Mute=false };
         Title="Quran Karim";Width=590;Height=590;WindowStartupLocation=WindowStartupLocation.CenterOwner;
         Background=new SolidColorBrush(Color.FromRgb(15,18,24));Foreground=Brushes.White;
         var panel=new StackPanel{Margin=new Thickness(28)};
