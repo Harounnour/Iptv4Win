@@ -20,6 +20,8 @@ public class Channel
     public int Number { get; set; }
     public string Name { get; set; } = "";
     public string Group { get; set; } = "";
+    public string ContentType { get; set; } = "Live";
+    public string? SeriesId { get; set; }
     public string? LogoUrl { get; set; }
     public string StreamUrl { get; set; } = "";
     public string? StalkerCmd { get; set; }
