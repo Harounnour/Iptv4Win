@@ -116,6 +116,8 @@ public partial class MainWindow : Window
     {
         var ch=_currentChannel;
         if(ch==null){StatusText.Text="Sélectionnez d'abord une chaîne.";return;}
+        if(IsAdultChannel(ch)&&!ParentControlWindow.Authorize(this))
+        {StatusText.Text="Chaîne bloquée par le contrôle parental.";return;}
         try
         {
             var url=await ResolveStreamAsync(ch);
@@ -129,7 +131,6 @@ public partial class MainWindow : Window
             if(ch.StalkerCmd!=null&&_stalker!=null)
             {
                 start.ArgumentList.Add("--http-referrer="+_stalker.PlaybackReferer);
-                start.ArgumentList.Add("--http-cookie="+_stalker.PlaybackCookie);
             }
             start.ArgumentList.Add(url);
             Process.Start(start);
