@@ -8,56 +8,92 @@ public class XtreamClient
 {
     readonly HttpClient _http;
     readonly string _base, _user, _pass;
-
     public XtreamClient(PlaylistSource s, HttpClient http)
     {
-        _http = http;
-        _base = s.Url.Trim().TrimEnd('/');
-        _user = s.Username;
-        _pass = s.Password;
+        _http = http; _base = s.Url.Trim().TrimEnd('/'); _user = s.Username; _pass = s.Password;
     }
 
     static string Str(JsonElement e, string name)
     {
-        if (!e.TryGetProperty(name, out var v) || v.ValueKind == JsonValueKind.Null) return "";
+        if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(name, out var v) || v.ValueKind == JsonValueKind.Null) return "";
         return v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : v.ToString();
     }
+    string Api => $"{_base}/player_api.php?username={Uri.EscapeDataString(_user)}&password={Uri.EscapeDataString(_pass)}";
+    string AuthPath => $"{Uri.EscapeDataString(_user)}/{Uri.EscapeDataString(_pass)}";
 
-    public async Task<List<Channel>> GetLiveChannelsAsync()
+    async Task<Dictionary<string,string>> CategoriesAsync(string action)
     {
-        var u = Uri.EscapeDataString(_user);
-        var p = Uri.EscapeDataString(_pass);
-        var api = $"{_base}/player_api.php?username={u}&password={p}";
+        var result = new Dictionary<string,string>();
+        using var doc = JsonDocument.Parse(await _http.GetStringAsync(Api + "&action=" + action));
+        if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            foreach (var item in doc.RootElement.EnumerateArray())
+                result[Str(item,"category_id")] = Str(item,"category_name");
+        return result;
+    }
 
-        var cats = new Dictionary<string, string>();
-        using (var d = JsonDocument.Parse(await _http.GetStringAsync(api + "&action=get_live_categories")))
+    public async Task<List<Channel>> GetAllContentAsync()
+    {
+        var list = new List<Channel>();
+        var liveCats = await CategoriesAsync("get_live_categories");
+        using (var doc = JsonDocument.Parse(await _http.GetStringAsync(Api + "&action=get_live_streams")))
         {
-            if (d.RootElement.ValueKind == JsonValueKind.Array)
-                foreach (var c in d.RootElement.EnumerateArray())
-                    cats[Str(c, "category_id")] = Str(c, "category_name");
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) throw new InvalidOperationException("Réponse invalide du serveur Xtream.");
+            var n=1;
+            foreach(var item in doc.RootElement.EnumerateArray())
+            {
+                liveCats.TryGetValue(Str(item,"category_id"),out var group);
+                var id=Str(item,"stream_id"); var icon=Str(item,"stream_icon");
+                list.Add(new Channel { Number=int.TryParse(Str(item,"num"),out var num)?num:n++, Name=Str(item,"name"), Group=group??"Live", ContentType="Live", LogoUrl=icon.Length>0?icon:null, StreamUrl=$"{_base}/live/{AuthPath}/{id}.{(Str(item,"container_extension") is {Length:>0} ext?ext:"ts")}" });
+            }
         }
 
-        using var s = JsonDocument.Parse(await _http.GetStringAsync(api + "&action=get_live_streams"));
-        if (s.RootElement.ValueKind != JsonValueKind.Array)
-            throw new InvalidOperationException("Réponse invalide du serveur (identifiants ou adresse incorrects ?)");
-
-        var list = new List<Channel>();
-        var n = 1;
-        foreach (var c in s.RootElement.EnumerateArray())
+        var vodCats = await CategoriesAsync("get_vod_categories");
+        using (var doc = JsonDocument.Parse(await _http.GetStringAsync(Api + "&action=get_vod_streams")))
         {
-            var id = Str(c, "stream_id");
-            cats.TryGetValue(Str(c, "category_id"), out var group);
-            var icon = Str(c, "stream_icon");
-            list.Add(new Channel
+            if(doc.RootElement.ValueKind==JsonValueKind.Array)
             {
-                Number = int.TryParse(Str(c, "num"), out var num) ? num : n,
-                Name = Str(c, "name"),
-                Group = group ?? "",
-                LogoUrl = icon.Length > 0 ? icon : null,
-                StreamUrl = $"{_base}/live/{u}/{p}/{id}.m3u8"
-            });
-            n++;
+                var n=1;
+                foreach(var item in doc.RootElement.EnumerateArray())
+                {
+                    vodCats.TryGetValue(Str(item,"category_id"),out var group);
+                    var id=Str(item,"stream_id");var ext=Str(item,"container_extension");
+                    list.Add(new Channel { Number=n++,Name=Str(item,"name"),Group=group??"Films",ContentType="Films",LogoUrl=Str(item,"stream_icon"),StreamUrl=$"{_base}/movie/{AuthPath}/{id}.{(ext.Length>0?ext:"mp4")}" });
+                }
+            }
+        }
+
+        var seriesCats = await CategoriesAsync("get_series_categories");
+        using (var doc = JsonDocument.Parse(await _http.GetStringAsync(Api + "&action=get_series")))
+        {
+            if(doc.RootElement.ValueKind==JsonValueKind.Array)
+            {
+                var n=1;
+                foreach(var item in doc.RootElement.EnumerateArray())
+                {
+                    seriesCats.TryGetValue(Str(item,"category_id"),out var group);
+                    list.Add(new Channel { Number=n++,Name=Str(item,"name"),Group=group??"Series",ContentType="Series",SeriesId=Str(item,"series_id"),LogoUrl=Str(item,"cover") });
+                }
+            }
         }
         return list;
+    }
+
+    public async Task<List<Channel>> GetSeriesEpisodesAsync(string seriesId)
+    {
+        using var doc=JsonDocument.Parse(await _http.GetStringAsync(Api+"&action=get_series_info&series_id="+Uri.EscapeDataString(seriesId)));
+        if(!doc.RootElement.TryGetProperty("episodes",out var seasons)||seasons.ValueKind!=JsonValueKind.Object)
+            throw new InvalidOperationException("Aucun épisode n'a été retourné pour cette série.");
+        var result=new List<Channel>();var n=1;
+        foreach(var season in seasons.EnumerateObject())
+        {
+            if(season.Value.ValueKind!=JsonValueKind.Array)continue;
+            foreach(var ep in season.Value.EnumerateArray())
+            {
+                var id=Str(ep,"id");var ext=Str(ep,"container_extension");
+                var title=Str(ep,"title");if(title.Length==0)title=$"Épisode {n}";
+                result.Add(new Channel { Number=n++,Name=title,Group=$"Saison {season.Name}",ContentType="Live",StreamUrl=$"{_base}/series/{AuthPath}/{id}.{(ext.Length>0?ext:"mp4")}" });
+            }
+        }
+        return result;
     }
 }
