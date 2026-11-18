@@ -29,7 +29,6 @@ public class PlaylistStore
         public string EpgUrl { get; set; } = "";
         public string PasswordEnc { get; set; } = "";
         public string MacEnc { get; set; } = "";
-        public string FootballDataApiKeyEnc { get; set; } = "";
     }
 
     public static PlaylistStore Load()
@@ -43,7 +42,7 @@ public class PlaylistStore
             store.LastUsedId = d.LastUsedId;
             foreach (var x in d.Items)
                 store.Items.Add(new PlaylistSource { Id=x.Id, Name=x.Name, Type=x.Type, Url=x.Url, Username=x.Username,
-                    EpgUrl=x.EpgUrl, Password=Dec(x.PasswordEnc), Mac=Dec(x.MacEnc), FootballDataApiKey=Dec(x.FootballDataApiKeyEnc) });
+                    EpgUrl=x.EpgUrl, Password=Dec(x.PasswordEnc), Mac=Dec(x.MacEnc) });
         }
         catch { }
         return store;
@@ -54,7 +53,7 @@ public class PlaylistStore
         var d = new Stored { LastUsedId = LastUsedId };
         foreach (var s in Items)
             d.Items.Add(new StoredSource { Id=s.Id, Name=s.Name, Type=s.Type, Url=s.Url, Username=s.Username, EpgUrl=s.EpgUrl,
-                PasswordEnc=Enc(s.Password), MacEnc=Enc(s.Mac), FootballDataApiKeyEnc=Enc(s.FootballDataApiKey) });
+                PasswordEnc=Enc(s.Password), MacEnc=Enc(s.Mac) });
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(d, Json));
     }
