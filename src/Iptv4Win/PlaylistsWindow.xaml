@@ -1,0 +1,61 @@
+<Window x:Class="Iptv4Win.PlaylistsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Playlists" Width="920" Height="600" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Fg}">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="300"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <DockPanel Background="{StaticResource Panel}">
+      <Button DockPanel.Dock="Bottom" Content="+ Ajouter une playlist" Margin="14" Click="Add_Click"/>
+      <ListBox x:Name="SavedList" Background="Transparent" BorderThickness="0" Margin="0,12,0,0"
+               DisplayMemberPath="Display" SelectionChanged="Saved_SelectionChanged"/>
+    </DockPanel>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="32,24">
+        <TextBlock Text="Playlist" FontSize="22" FontWeight="Bold" Margin="0,0,0,16"/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+          <RadioButton x:Name="RbM3u" GroupName="t" Content="M3U / URL" Checked="Type_Checked"/>
+          <RadioButton x:Name="RbXtream" GroupName="t" Content="Xtream Codes" Checked="Type_Checked"/>
+          <RadioButton x:Name="RbStalker" GroupName="t" Content="Stalker Portal" Checked="Type_Checked"/>
+        </StackPanel>
+
+        <TextBlock Text="Nom" Foreground="{StaticResource Muted}"/>
+        <TextBox x:Name="TxtName" Margin="0,4,0,12"/>
+
+        <TextBlock x:Name="LblUrl" Foreground="{StaticResource Muted}"/>
+        <TextBox x:Name="TxtUrl" Margin="0,4,0,12"/>
+
+        <StackPanel x:Name="XtreamPanel">
+          <TextBlock Text="Nom d'utilisateur" Foreground="{StaticResource Muted}"/>
+          <TextBox x:Name="TxtUser" Margin="0,4,0,12"/>
+          <TextBlock Text="Mot de passe" Foreground="{StaticResource Muted}"/>
+          <PasswordBox x:Name="TxtPass" Margin="0,4,0,12"/>
+        </StackPanel>
+
+        <StackPanel x:Name="StalkerPanel">
+          <TextBlock Text="Adresse MAC (00:1A:79:XX:XX:XX)" Foreground="{StaticResource Muted}"/>
+          <TextBox x:Name="TxtMac" Margin="0,4,0,12"/>
+        </StackPanel>
+
+        <StackPanel x:Name="EpgPanel">
+          <TextBlock Text="URL du guide EPG (optionnel)" Foreground="{StaticResource Muted}"/>
+          <TextBox x:Name="TxtEpg" Margin="0,4,0,12"/>
+        </StackPanel>
+
+        <TextBlock x:Name="Status" TextWrapping="Wrap" Margin="0,4,0,12" Foreground="{StaticResource Muted}"/>
+
+        <StackPanel Orientation="Horizontal">
+          <Button Content="Tester la connexion" Click="Test_Click" Margin="0,0,10,0"/>
+          <Button Content="Enregistrer" Click="Save_Click" Margin="0,0,10,0"/>
+          <Button Content="Utiliser" Background="{StaticResource Accent}" Foreground="#0B1020" Click="Use_Click" Margin="0,0,10,0"/>
+          <Button Content="Supprimer" Click="Delete_Click"/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>

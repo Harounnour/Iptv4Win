@@ -1,0 +1,80 @@
+<Window x:Class="Iptv4Win.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        Title="iptv4win" Width="1280" Height="760" MinWidth="900" MinHeight="560"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Fg}"
+        KeyDown="Window_KeyDown">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <Border x:Name="TopBar" Background="{StaticResource Panel}" Padding="20,10" BorderBrush="#1D2430" BorderThickness="0,0,0,1">
+      <DockPanel>
+        <TextBlock Text="iptv4win" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,24,0"/>
+        <Button x:Name="BtnPlaylists" DockPanel.Dock="Right" Content="Playlists" Click="BtnPlaylists_Click"/>
+        <TextBox x:Name="SearchBox" DockPanel.Dock="Right" Width="240" Margin="0,0,12,0"
+                 VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged"/>
+        <TextBlock x:Name="CountText" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition x:Name="Col0" Width="230"/>
+        <ColumnDefinition x:Name="Col1" Width="520"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <ListBox x:Name="GroupList" Background="{StaticResource Panel}" BorderThickness="0" Padding="0,10,0,0"
+               SelectionChanged="GroupList_SelectionChanged"/>
+
+      <ListBox x:Name="ChannelList" Grid.Column="1" Background="{StaticResource Bg}" BorderThickness="0"
+               VirtualizingStackPanel.IsVirtualizing="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               SelectionChanged="ChannelList_SelectionChanged">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Grid Height="56">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="{Binding Number}" Foreground="{StaticResource Muted}" TextAlignment="Right" VerticalAlignment="Center"/>
+              <Border Grid.Column="1" Width="44" Height="32" Background="{StaticResource Card}" CornerRadius="6">
+                <Grid>
+                  <TextBlock Text="{Binding Initials}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  <Image Source="{Binding LogoUri}" Stretch="Uniform" Margin="3"/>
+                </Grid>
+              </Border>
+              <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Group}" FontSize="12" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Grid Grid.Column="2" Background="{StaticResource Panel}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Background="Black" Margin="20,20,20,0" CornerRadius="10">
+          <vlc:VideoView x:Name="Video"/>
+        </Border>
+        <StackPanel x:Name="InfoPanel" Grid.Row="1" Margin="20">
+          <TextBlock x:Name="NowName" Text="Aucune chaîne" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+          <TextBlock x:Name="StatusText" Foreground="{StaticResource Muted}" Margin="0,4,0,12" TextWrapping="Wrap"/>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="Muet" Click="BtnMute_Click" Margin="0,0,10,0"/>
+            <Button Content="Plein écran (F11)" Click="BtnFull_Click"/>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>
