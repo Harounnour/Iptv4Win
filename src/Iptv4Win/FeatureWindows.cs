@@ -60,7 +60,7 @@ public sealed class WeatherWindow : Window
             var humidity=current.GetProperty("relative_humidity_2m").GetInt32();
             var wind=current.GetProperty("wind_speed_10m").GetDouble();
             _icon.Text=emoji;
-            _result.Text=$"{c.Name}\n{temp:0} °C  •  {desc}\nRessenti {feel:0} °C  |  Humidité {humidity}%\nVent {wind:0} km/h";
+            _result.Text=$"{cityName}\n{temp:0} °C  •  {desc}\nRessenti {feel:0} °C  |  Humidité {humidity}%\nVent {wind:0} km/h";
             _updated.Text="Mise à jour : "+DateTime.Now.ToString("HH:mm");
         }
         catch { _result.Text="Données météo indisponibles. Vérifiez votre connexion."; }
