@@ -13,9 +13,11 @@ public partial class MainWindow : Window
     const string AllGroups = "Toutes les chaînes";
 
     readonly LibVLC _lib = new(
-        "--network-caching=1500",
-        "--live-caching=1500",
+        "--network-caching=3000",
+        "--live-caching=3000",
+        "--file-caching=3000",
         "--http-reconnect",
+        "--rtsp-tcp",
         "--no-video-title-show");
     readonly MediaPlayer _player;
     Media? _currentMedia;
@@ -30,10 +32,29 @@ public partial class MainWindow : Window
         _player = new MediaPlayer(_lib);
 
         _player.EncounteredError += (_, _) => Dispatcher.Invoke(() =>
-            StatusText.Text = "Échec de lecture. Vérifiez le flux, le format ou les droits d'accès.");
-        _player.Playing += (_, _) => Dispatcher.Invoke(() => StatusText.Text = "Lecture en cours");
+        {
+            BufferProgress.Visibility = Visibility.Collapsed;
+            StatusText.Text = "Échec de lecture. Vérifiez l'URL du flux, le format ou les droits d'accès.";
+        });
+        _player.Playing += (_, _) => Dispatcher.Invoke(() =>
+        {
+            BufferProgress.Visibility = Visibility.Collapsed;
+            StatusText.Text = "Lecture en cours";
+        });
         _player.Buffering += (_, value) => Dispatcher.Invoke(() =>
-            StatusText.Text = value.Cache < 100 ? $"Mise en mémoire tampon… {value.Cache:0} %" : "Connexion…");
+        {
+            var percent = Math.Clamp(value.Cache, 0, 100);
+            BufferProgress.Visibility = percent >= 100 ? Visibility.Collapsed : Visibility.Visible;
+            BufferProgress.Value = percent;
+            StatusText.Text = percent < 100
+                ? $"Vérifier la mise en tampon… {percent:0} %"
+                : "Connexion au flux…";
+        });
+        _player.EndReached += (_, _) => Dispatcher.Invoke(() =>
+        {
+            BufferProgress.Visibility = Visibility.Collapsed;
+            StatusText.Text = "Fin du flux.";
+        });
 
         Loaded += async (_, _) =>
         {
@@ -88,7 +109,9 @@ public partial class MainWindow : Window
     async Task PlayAsync(Channel ch)
     {
         NowName.Text = ch.Name;
-        StatusText.Text = "Connexion…";
+        StatusText.Text = "Connexion au flux…";
+        BufferProgress.Value = 0;
+        BufferProgress.Visibility = Visibility.Visible;
         try
         {
             var url = ch.StreamUrl;
@@ -103,18 +126,22 @@ public partial class MainWindow : Window
             _currentMedia?.Dispose();
 
             var media = new Media(_lib, uri);
-            media.AddOption(":network-caching=1500");
+            media.AddOption(":network-caching=3000");
+            media.AddOption(":live-caching=3000");
+            media.AddOption(":file-caching=3000");
             media.AddOption(":http-reconnect");
+            media.AddOption(":rtsp-tcp");
             media.AddOption(":no-video-title-show");
-            media.AddOption(":http-user-agent=VLC/3.0.20 LibVLC/3.0.20");
+            media.AddOption(":http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
             _currentMedia = media;
 
             if (!_player.Play(media))
                 throw new InvalidOperationException("Le lecteur a refusé ce flux.");
-            StatusText.Text = "Connexion au flux…";
+            StatusText.Text = "Vérifier la mise en tampon…";
         }
         catch (Exception ex)
         {
+            BufferProgress.Visibility = Visibility.Collapsed;
             StatusText.Text = "Échec de lecture : " + ex.Message;
         }
     }
