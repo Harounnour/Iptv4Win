@@ -36,7 +36,7 @@ public sealed class WeatherWindow : Window
         Background=new SolidColorBrush(Color.FromRgb(15,18,24)); Foreground=Brushes.White;
         foreach(var c in Cities) _city.Items.Add(c.Name);
         _city.SelectedItem="Rabat"; _city.SelectionChanged+=async (_,_)=>await RefreshWeather();
-        var refresh=new Button { Content="Actualiser", Padding=new Thickness(18,9), Margin=new Thickness(0,0,0,12) };
+        var refresh=new Button { Content="Actualiser", Padding=new Thickness(18,9,18,9), Margin=new Thickness(0,0,0,12) };
         refresh.Click+=async (_,_)=>await RefreshWeather();
         var panel=new StackPanel { Margin=new Thickness(28), VerticalAlignment=VerticalAlignment.Center };
         panel.Children.Add(new TextBlock { Text="MÉTÉO • MAROC", FontSize=22, FontWeight=FontWeights.Bold, Margin=new Thickness(0,0,0,20) });
