@@ -7,18 +7,10 @@ using Iptv4Win.Models;
 
 namespace Iptv4Win.Services;
 
-/// <summary>Sauvegarde les abonnements dans %AppData%\Iptv4Win\playlists.json (mot de passe et MAC chiffrés avec DPAPI).</summary>
 public class PlaylistStore
 {
-    static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Iptv4Win", "playlists.json");
-
-    static readonly JsonSerializerOptions Json = new()
-    {
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() }
-    };
-
+    static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Iptv4Win", "playlists.json");
+    static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
     public List<PlaylistSource> Items { get; } = new();
     public Guid? LastUsedId { get; set; }
 
@@ -27,7 +19,6 @@ public class PlaylistStore
         public Guid? LastUsedId { get; set; }
         public List<StoredSource> Items { get; set; } = new();
     }
-
     class StoredSource
     {
         public Guid Id { get; set; }
@@ -38,6 +29,7 @@ public class PlaylistStore
         public string EpgUrl { get; set; } = "";
         public string PasswordEnc { get; set; } = "";
         public string MacEnc { get; set; } = "";
+        public string FootballDataApiKeyEnc { get; set; } = "";
     }
 
     public static PlaylistStore Load()
@@ -50,14 +42,10 @@ public class PlaylistStore
             if (d == null) return store;
             store.LastUsedId = d.LastUsedId;
             foreach (var x in d.Items)
-                store.Items.Add(new PlaylistSource
-                {
-                    Id = x.Id, Name = x.Name, Type = x.Type, Url = x.Url,
-                    Username = x.Username, EpgUrl = x.EpgUrl,
-                    Password = Dec(x.PasswordEnc), Mac = Dec(x.MacEnc)
-                });
+                store.Items.Add(new PlaylistSource { Id=x.Id, Name=x.Name, Type=x.Type, Url=x.Url, Username=x.Username,
+                    EpgUrl=x.EpgUrl, Password=Dec(x.PasswordEnc), Mac=Dec(x.MacEnc), FootballDataApiKey=Dec(x.FootballDataApiKeyEnc) });
         }
-        catch { /* fichier absent ou corrompu : on repart d'une liste vide */ }
+        catch { }
         return store;
     }
 
@@ -65,19 +53,14 @@ public class PlaylistStore
     {
         var d = new Stored { LastUsedId = LastUsedId };
         foreach (var s in Items)
-            d.Items.Add(new StoredSource
-            {
-                Id = s.Id, Name = s.Name, Type = s.Type, Url = s.Url,
-                Username = s.Username, EpgUrl = s.EpgUrl,
-                PasswordEnc = Enc(s.Password), MacEnc = Enc(s.Mac)
-            });
+            d.Items.Add(new StoredSource { Id=s.Id, Name=s.Name, Type=s.Type, Url=s.Url, Username=s.Username, EpgUrl=s.EpgUrl,
+                PasswordEnc=Enc(s.Password), MacEnc=Enc(s.Mac), FootballDataApiKeyEnc=Enc(s.FootballDataApiKey) });
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(d, Json));
     }
 
     static string Enc(string v) => string.IsNullOrEmpty(v) ? "" :
         Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(v), null, DataProtectionScope.CurrentUser));
-
     static string Dec(string v)
     {
         if (string.IsNullOrEmpty(v)) return "";
