@@ -4,16 +4,15 @@ using Iptv4Win.Models;
 
 namespace Iptv4Win.Services;
 
-public record LoadResult(List<Channel> Channels, StalkerClient? Stalker);
+public record LoadResult(List<Channel> Channels, StalkerClient? Stalker, XtreamClient? Xtream = null);
 
 public static class ChannelLoader
 {
     static readonly HttpClient Http = CreateHttp();
-
     static HttpClient CreateHttp()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
-        h.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "VLC/3.0.20 LibVLC/3.0.20");
+        h.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0");
         return h;
     }
 
@@ -22,7 +21,10 @@ public static class ChannelLoader
         switch (s.Type)
         {
             case PlaylistType.Xtream:
-                return new LoadResult(await new XtreamClient(s, Http).GetLiveChannelsAsync(), null);
+            {
+                var xtream=new XtreamClient(s,Http);
+                return new LoadResult(await xtream.GetAllContentAsync(),null,xtream);
+            }
             case PlaylistType.Stalker:
             {
                 var st = new StalkerClient(s);
@@ -31,7 +33,14 @@ public static class ChannelLoader
             default:
             {
                 var text = File.Exists(s.Url) ? await File.ReadAllTextAsync(s.Url) : await Http.GetStringAsync(s.Url);
-                return new LoadResult(M3uParser.Parse(text), null);
+                var channels=M3uParser.Parse(text);
+                foreach(var channel in channels)
+                {
+                    var label=(channel.Group+" "+channel.Name).ToLowerInvariant();
+                    if(label.Contains("series")||label.Contains("série")||label.Contains("serie"))channel.ContentType="Series";
+                    else if(label.Contains("film")||label.Contains("movie")||label.Contains("vod")||label.Contains("cinema"))channel.ContentType="Films";
+                }
+                return new LoadResult(channels,null);
             }
         }
     }
