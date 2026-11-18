@@ -13,9 +13,9 @@ public partial class MainWindow : Window
     const string AllGroups = "Toutes les chaînes";
 
     readonly LibVLC _lib = new(
-        "--network-caching=3000",
-        "--live-caching=3000",
-        "--file-caching=3000",
+        "--network-caching=5000",
+        "--live-caching=5000",
+        "--file-caching=5000",
         "--http-reconnect",
         "--rtsp-tcp",
         "--no-video-title-show");
@@ -139,12 +139,13 @@ public partial class MainWindow : Window
             _currentMedia?.Dispose();
 
             var media = new Media(_lib, uri);
-            media.AddOption(":network-caching=3000");
-            media.AddOption(":live-caching=3000");
-            media.AddOption(":file-caching=3000");
+            media.AddOption(":network-caching=5000");
+            media.AddOption(":live-caching=5000");
+            media.AddOption(":file-caching=5000");
             media.AddOption(":http-reconnect");
             media.AddOption(":rtsp-tcp");
             media.AddOption(":no-video-title-show");
+            media.AddOption(":http-referrer=" + (ch.StalkerCmd != null ? "http://localhost/" : uri.GetLeftPart(UriPartial.Authority) + "/"));
             media.AddOption(":http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
             _currentMedia = media;
 
