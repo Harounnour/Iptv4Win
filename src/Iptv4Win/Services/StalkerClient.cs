@@ -17,6 +17,8 @@ public class StalkerClient
 
     const string Ua = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG250 stbapp ver: 2 rev: 250 Safari/533.3";
     readonly string _load, _mac, _referer, _origin;
+    public string PlaybackReferer => _referer;
+    public string PlaybackCookie => $"mac={_mac}; stb_lang=en; timezone=Europe/Paris" + (_token.Length > 0 ? $"; token={_token}" : "");
     string _token = "";
 
     public StalkerClient(PlaylistSource s)
