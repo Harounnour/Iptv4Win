@@ -12,7 +12,6 @@ public class PlaylistSource
     public string Password { get; set; } = "";
     public string Mac { get; set; } = "";
     public string EpgUrl { get; set; } = "";
-    public string FootballDataApiKey { get; set; } = "";
     public string Display => $"{(string.IsNullOrWhiteSpace(Name) ? "Sans nom" : Name)}  ·  {Type}";
 }
 
