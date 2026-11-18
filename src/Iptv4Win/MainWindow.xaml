@@ -13,7 +13,10 @@
         <Button x:Name="BtnWeather" DockPanel.Dock="Right" Content="Météo" Click="BtnWeather_Click" Margin="0,0,8,0"/>
         <Button x:Name="BtnQuran" DockPanel.Dock="Right" Content="Quran Karim" Click="BtnQuran_Click" Margin="0,0,8,0"/>
         <Button x:Name="BtnPlaylists" DockPanel.Dock="Right" Content="Playlists" Click="BtnPlaylists_Click"/>
-        <TextBox x:Name="SearchBox" DockPanel.Dock="Right" Width="240" Margin="0,0,12,0" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged"/>
+        <ComboBox x:Name="SortBox" DockPanel.Dock="Right" Width="145" Margin="0,0,10,0" VerticalContentAlignment="Center" SelectionChanged="SortBox_SelectionChanged" SelectedIndex="0">
+          <ComboBoxItem Content="Ordre playlist"/><ComboBoxItem Content="A → Z"/><ComboBoxItem Content="Z → A"/><ComboBoxItem Content="Numéro"/>
+        </ComboBox>
+        <TextBox x:Name="SearchBox" DockPanel.Dock="Right" Width="210" Margin="0,0,12,0" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged"/>
         <TextBlock x:Name="CountText" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
       </DockPanel>
     </Border>
@@ -45,7 +48,7 @@
           <WrapPanel>
             <Button Content="Précédente" Click="BtnPrevious_Click" Margin="0,0,8,6"/>
             <Button Content="Suivante" Click="BtnNext_Click" Margin="0,0,10,6"/>
-            <Button Content="VLC externe" Click="BtnExternalVlc_Click" ToolTip="Ouvrir le flux dans VLC pour Windows" Margin="0,0,10,6"/>
+            <Button Content="MPV externe" Click="BtnExternalMpv_Click" ToolTip="Ouvrir le flux dans mpv pour Windows (Stalker inclus)" Margin="0,0,10,6"/>
             <Button Content="−" Click="BtnVolumeDown_Click" ToolTip="Diminuer le volume" Margin="0,0,4,6" MinWidth="34"/>
             <TextBlock x:Name="VolumeText" Text="100 %" VerticalAlignment="Center" MinWidth="48" TextAlignment="Center" Margin="0,0,4,6"/>
             <Button Content="+" Click="BtnVolumeUp_Click" ToolTip="Augmenter le volume" Margin="0,0,8,6" MinWidth="34"/>
