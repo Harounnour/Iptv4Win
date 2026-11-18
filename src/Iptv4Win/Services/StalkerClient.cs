@@ -7,7 +7,8 @@ namespace Iptv4Win.Services;
 
 public class StalkerClient
 {
-    static readonly HttpClient Http = new(new HttpClientHandler
+    // Separate cookie jars prevent sessions from different Stalker portals interfering.
+    readonly HttpClient _http = new(new HttpClientHandler
     {
         CookieContainer = new CookieContainer(),
         AutomaticDecompression = DecompressionMethods.All,
@@ -51,7 +52,7 @@ public class StalkerClient
         req.Headers.TryAddWithoutValidation("Cookie", $"mac={_mac}; stb_lang=en; timezone=Europe/Paris" + (_token.Length > 0 ? $"; token={_token}" : ""));
         if (_token.Length > 0) req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _token);
 
-        using var resp = await Http.SendAsync(req);
+        using var resp = await _http.SendAsync(req);
         var body = await resp.Content.ReadAsStringAsync();
         resp.EnsureSuccessStatusCode();
         using var doc = JsonDocument.Parse(body);
@@ -112,11 +113,16 @@ public class StalkerClient
         if (_token.Length == 0) await HandshakeAsync();
         var js = await GetAsync($"type=itv&action=create_link&cmd={Uri.EscapeDataString(cmd)}&series=&forced_storage=0&disable_ad=0&download=0");
         var link = Str(js, "cmd").Trim();
+        if (link.Length == 0 && js.TryGetProperty("url", out var urlValue)) link = urlValue.GetString() ?? "";
         if (link.Length == 0) throw new InvalidOperationException("Le portail Stalker n'a pas fourni de lien de lecture.");
         if (link.StartsWith("ffmpeg ", StringComparison.OrdinalIgnoreCase))
             link = link["ffmpeg ".Length..].Trim();
         if (link.StartsWith("auto ", StringComparison.OrdinalIgnoreCase))
             link = link["auto ".Length..].Trim();
-        return link.Trim('"', '\'');
+        link = link.Trim('"', '\'');
+        if (link.StartsWith("//", StringComparison.Ordinal)) link = "http:" + link;
+        if (!Uri.TryCreate(link, UriKind.Absolute, out var streamUri) || (streamUri.Scheme != "http" && streamUri.Scheme != "https" && streamUri.Scheme != "rtsp"))
+            throw new InvalidOperationException("Le portail a retourné une URL de flux invalide.");
+        return link;
     }
 }
