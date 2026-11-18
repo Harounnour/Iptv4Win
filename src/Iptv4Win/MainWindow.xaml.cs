@@ -99,7 +99,7 @@ public partial class MainWindow : Window
 
             if (string.IsNullOrWhiteSpace(url) ||
                 !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var streamUri) ||
-                (streamUri.Scheme != Uri.UriSchemeHttp && streamUri.Scheme != Uri.UriSchemeHttps && streamUri.Scheme != "rtsp"))
+                !new[] { "http", "https", "rtsp", "rtmp", "rtp", "udp", "mms", "mmsh", "file" }.Contains(streamUri.Scheme, StringComparer.OrdinalIgnoreCase))
                 throw new InvalidOperationException("L'adresse du flux reçue de la playlist est invalide.");
 
             // Garder l'objet Media vivant pendant toute la lecture évite sa libération
