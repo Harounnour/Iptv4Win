@@ -14,6 +14,7 @@
     <Border x:Name="TopBar" Background="{StaticResource Panel}" Padding="20,10" BorderBrush="#1D2430" BorderThickness="0,0,0,1">
       <DockPanel>
         <TextBlock Text="iptv4win" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,24,0"/>
+        <Button x:Name="BtnParental" DockPanel.Dock="Right" Content="Contrôle parental" Click="BtnParental_Click" Margin="8,0,0,0"/>
         <Button x:Name="BtnPlaylists" DockPanel.Dock="Right" Content="Playlists" Click="BtnPlaylists_Click"/>
         <TextBox x:Name="SearchBox" DockPanel.Dock="Right" Width="240" Margin="0,0,12,0"
                  VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged"/>
