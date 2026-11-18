@@ -12,9 +12,15 @@ public partial class MainWindow : Window
 {
     const string AllGroups = "Toutes les chaînes";
 
+    // Initialize the native LibVLC runtime before constructing LibVLC/MediaPlayer.
+    static MainWindow()
+    {
+        Core.Initialize();
+    }
+
     readonly LibVLC _lib = new(
-        "--network-caching=1500",
-        "--live-caching=1500",
+        "--network-caching=3000",
+        "--live-caching=3000",
         "--http-reconnect",
         "--no-video-title-show");
     readonly MediaPlayer _player;
@@ -103,7 +109,8 @@ public partial class MainWindow : Window
             _currentMedia?.Dispose();
 
             var media = new Media(_lib, uri);
-            media.AddOption(":network-caching=1500");
+            media.AddOption(":network-caching=3000");
+            media.AddOption(":live-caching=3000");
             media.AddOption(":http-reconnect");
             media.AddOption(":no-video-title-show");
             media.AddOption(":http-user-agent=VLC/3.0.20 LibVLC/3.0.20");
