@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 
     readonly LibVLC _lib = new();
     readonly MediaPlayer _player;
+    Media? _currentMedia;
     readonly PlaylistStore _store = PlaylistStore.Load();
     readonly ParentalControlService _parental = new();
     List<Channel> _all = new();
@@ -23,6 +24,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _player = new MediaPlayer(_lib);
+        _player.EncounteredError += (_, _) => Dispatcher.Invoke(() =>
+            StatusText.Text = "Échec de lecture du flux. Vérifiez l'abonnement, l'URL et la disponibilité du serveur.");
+        _player.EndReached += (_, _) => Dispatcher.Invoke(() =>
+            StatusText.Text = "Le flux est terminé ou le serveur a interrompu la diffusion.");
 
         Loaded += async (_, _) =>
         {
@@ -38,7 +43,13 @@ public partial class MainWindow : Window
             if (src == null) await OpenPlaylistsAsync();
             else await LoadSourceAsync(src);
         };
-        Closed += (_, _) => { _player.Dispose(); _lib.Dispose(); };
+        Closed += (_, _) =>
+        {
+            _player.Stop();
+            _currentMedia?.Dispose();
+            _player.Dispose();
+            _lib.Dispose();
+        };
     }
 
     async Task LoadSourceAsync(PlaylistSource src)
@@ -83,10 +94,28 @@ public partial class MainWindow : Window
         try
         {
             var url = ch.StreamUrl;
-            if (ch.StalkerCmd != null && _stalker != null) url = await _stalker.CreateLinkAsync(ch.StalkerCmd);
-            using var media = new Media(_lib, new Uri(url));
-            _player.Play(media);
-            StatusText.Text = ch.Group;
+            if (ch.StalkerCmd != null && _stalker != null)
+                url = await _stalker.CreateLinkAsync(ch.StalkerCmd);
+
+            if (string.IsNullOrWhiteSpace(url) ||
+                !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var streamUri) ||
+                (streamUri.Scheme != Uri.UriSchemeHttp && streamUri.Scheme != Uri.UriSchemeHttps && streamUri.Scheme != "rtsp"))
+                throw new InvalidOperationException("L'adresse du flux reçue de la playlist est invalide.");
+
+            // Garder l'objet Media vivant pendant toute la lecture évite sa libération
+            // immédiate après l'appel à Play().
+            _player.Stop();
+            _currentMedia?.Dispose();
+            _currentMedia = new Media(_lib, streamUri);
+            _currentMedia.AddOption(":network-caching=1500");
+            _currentMedia.AddOption(":live-caching=1500");
+            _currentMedia.AddOption(":http-user-agent=Mozilla/5.0");
+            _currentMedia.AddOption(":http-reconnect");
+
+            if (!_player.Play(_currentMedia))
+                throw new InvalidOperationException("VLC n'a pas pu démarrer ce flux.");
+
+            StatusText.Text = string.IsNullOrWhiteSpace(ch.Group) ? "Lecture en cours…" : ch.Group;
         }
         catch (Exception ex)
         {
