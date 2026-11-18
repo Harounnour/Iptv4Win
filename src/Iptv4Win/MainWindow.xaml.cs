@@ -145,7 +145,11 @@ public partial class MainWindow : Window
             media.AddOption(":http-reconnect");
             media.AddOption(":rtsp-tcp");
             media.AddOption(":no-video-title-show");
-            media.AddOption(":http-referrer=" + (ch.StalkerCmd != null ? "http://localhost/" : uri.GetLeftPart(UriPartial.Authority) + "/"));
+            if (ch.StalkerCmd != null && _stalker != null)
+            {
+                media.AddOption(":http-referrer=" + _stalker.PlaybackReferer);
+                media.AddOption(":http-cookie=" + _stalker.PlaybackCookie);
+            }
             media.AddOption(":http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
             _currentMedia = media;
 
