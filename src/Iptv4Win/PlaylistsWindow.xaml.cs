@@ -19,14 +19,13 @@ public partial class PlaylistsWindow : Window
     void Bind(PlaylistSource s)
     {
         _cur=s; TxtName.Text=s.Name; TxtUrl.Text=s.Url; TxtUser.Text=s.Username; TxtPass.Password=s.Password;
-        TxtMac.Text=s.Mac; TxtEpg.Text=s.EpgUrl; TxtFootballApi.Password=s.FootballDataApiKey;
+        TxtMac.Text=s.Mac; TxtEpg.Text=s.EpgUrl;
         RbM3u.IsChecked=s.Type==PlaylistType.M3U; RbXtream.IsChecked=s.Type==PlaylistType.Xtream; RbStalker.IsChecked=s.Type==PlaylistType.Stalker;
         ApplyType(); Status.Text="";
     }
     PlaylistType CurrentType() => RbXtream.IsChecked==true ? PlaylistType.Xtream : RbStalker.IsChecked==true ? PlaylistType.Stalker : PlaylistType.M3U;
     PlaylistSource Read() => new() { Id=_cur.Id, Name=TxtName.Text.Trim(), Type=CurrentType(), Url=TxtUrl.Text.Trim(),
-        Username=TxtUser.Text.Trim(), Password=TxtPass.Password, Mac=TxtMac.Text.Trim(), EpgUrl=TxtEpg.Text.Trim(),
-        FootballDataApiKey=TxtFootballApi.Password };
+        Username=TxtUser.Text.Trim(), Password=TxtPass.Password, Mac=TxtMac.Text.Trim(), EpgUrl=TxtEpg.Text.Trim() };
     void ApplyType()
     {
         if (XtreamPanel==null || StalkerPanel==null || EpgPanel==null || LblUrl==null) return;
