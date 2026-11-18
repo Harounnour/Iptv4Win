@@ -216,6 +216,15 @@ public partial class MainWindow : Window
             StatusText.Text = "Contrôle parental configuré.";
     }
 
+    void SetVolume(int volume)
+    {
+        _player.Volume = Math.Clamp(volume, 0, 100);
+        VolumeText.Text = $"{_player.Volume} %";
+        if (_player.Volume > 0) _player.Mute = false;
+    }
+
+    void BtnVolumeDown_Click(object sender, RoutedEventArgs e) => SetVolume(_player.Volume - 10);
+    void BtnVolumeUp_Click(object sender, RoutedEventArgs e) => SetVolume(_player.Volume + 10);
     void BtnMute_Click(object sender, RoutedEventArgs e) => _player.Mute = !_player.Mute;
     void BtnFull_Click(object sender, RoutedEventArgs e) => ToggleFullscreen();
 
