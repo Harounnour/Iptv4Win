@@ -116,8 +116,8 @@ public partial class MainWindow : Window
     {
         var ch=_currentChannel;
         if(ch==null){StatusText.Text="Sélectionnez d'abord une chaîne.";return;}
-        if(IsAdultChannel(ch)&&!ParentControlWindow.Authorize(this))
-        {StatusText.Text="Chaîne bloquée par le contrôle parental.";return;}
+        if(IsAdultChannel(ch))
+        {StatusText.Text="Les chaînes classées comme adultes ne peuvent pas être ouvertes dans un lecteur externe.";return;}
         try
         {
             var url=await ResolveStreamAsync(ch);
