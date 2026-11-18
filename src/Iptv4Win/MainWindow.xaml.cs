@@ -33,7 +33,7 @@ public partial class MainWindow : Window
             StatusText.Text = "Échec de lecture. Vérifiez le flux, le format ou les droits d'accès.");
         _player.Playing += (_, _) => Dispatcher.Invoke(() => StatusText.Text = "Lecture en cours");
         _player.Buffering += (_, value) => Dispatcher.Invoke(() =>
-            StatusText.Text = value < 100 ? $"Mise en mémoire tampon… {value:0} %" : "Connexion…");
+            StatusText.Text = value.Cache < 100 ? $"Mise en mémoire tampon… {value.Cache:0} %" : "Connexion…");
 
         Loaded += async (_, _) =>
         {
