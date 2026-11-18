@@ -30,12 +30,16 @@ public class XtreamClient
         var api = $"{_base}/player_api.php?username={u}&password={p}";
 
         var cats = new Dictionary<string, string>();
-        using (var d = JsonDocument.Parse(await _http.GetStringAsync(api + "&action=get_live_categories")))
+        // Certains serveurs Xtream ne publient pas les catégories : leur absence
+        // ne doit pas empêcher le chargement des flux.
+        try
         {
+            using var d = JsonDocument.Parse(await _http.GetStringAsync(api + "&action=get_live_categories"));
             if (d.RootElement.ValueKind == JsonValueKind.Array)
                 foreach (var c in d.RootElement.EnumerateArray())
                     cats[Str(c, "category_id")] = Str(c, "category_name");
         }
+        catch { /* les chaînes seront chargées sans nom de catégorie */ }
 
         using var s = JsonDocument.Parse(await _http.GetStringAsync(api + "&action=get_live_streams"));
         if (s.RootElement.ValueKind != JsonValueKind.Array)
@@ -54,7 +58,7 @@ public class XtreamClient
                 Name = Str(c, "name"),
                 Group = group ?? "",
                 LogoUrl = icon.Length > 0 ? icon : null,
-                StreamUrl = $"{_base}/live/{u}/{p}/{id}.m3u8"
+                StreamUrl = $"{_base}/live/{u}/{p}/{id}.ts"
             });
             n++;
         }
