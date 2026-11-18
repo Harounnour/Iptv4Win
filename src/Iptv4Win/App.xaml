@@ -2,6 +2,17 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Application.Resources>
+    <DrawingImage x:Key="AppIcon">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="#173B78" Geometry="M 16,2 L 30,10 L 30,26 L 16,34 L 2,26 L 2,10 Z"/>
+          <GeometryDrawing Brush="#62A8FF" Geometry="M 16,4 L 28,11 L 16,18 L 4,11 Z"/>
+          <GeometryDrawing Brush="#2867C7" Geometry="M 4,13 L 15,20 L 15,32 L 4,25 Z"/>
+          <GeometryDrawing Brush="#17458E" Geometry="M 17,20 L 28,13 L 28,25 L 17,32 Z"/>
+          <GeometryDrawing Brush="#EAF4FF" Geometry="M 16,8 L 20,11 L 16,14 L 12,11 Z"/>
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
     <SolidColorBrush x:Key="Bg" Color="#0F1218"/>
     <SolidColorBrush x:Key="Panel" Color="#131822"/>
     <SolidColorBrush x:Key="Card" Color="#1A212D"/>
