@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,8 +12,13 @@ public partial class MainWindow : Window
 {
     const string AllGroups = "Toutes les chaînes";
 
-    readonly LibVLC _lib = new();
+    readonly LibVLC _lib = new(
+        "--network-caching=1500",
+        "--live-caching=1500",
+        "--http-reconnect",
+        "--no-video-title-show");
     readonly MediaPlayer _player;
+    Media? _currentMedia;
     readonly PlaylistStore _store = PlaylistStore.Load();
     List<Channel> _all = new();
     StalkerClient? _stalker;
@@ -23,6 +29,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         _player = new MediaPlayer(_lib);
 
+        _player.EncounteredError += (_, _) => Dispatcher.Invoke(() =>
+            StatusText.Text = "Échec de lecture. Vérifiez le flux, le format ou les droits d'accès.");
+        _player.Playing += (_, _) => Dispatcher.Invoke(() => StatusText.Text = "Lecture en cours");
+        _player.Buffering += (_, value) => Dispatcher.Invoke(() =>
+            StatusText.Text = value < 100 ? $"Mise en mémoire tampon… {value:0} %" : "Connexion…");
+
         Loaded += async (_, _) =>
         {
             Video.MediaPlayer = _player;
@@ -30,7 +42,13 @@ public partial class MainWindow : Window
             if (src == null) await OpenPlaylistsAsync();
             else await LoadSourceAsync(src);
         };
-        Closed += (_, _) => { _player.Dispose(); _lib.Dispose(); };
+        Closed += (_, _) =>
+        {
+            _player.Stop();
+            _currentMedia?.Dispose();
+            _player.Dispose();
+            _lib.Dispose();
+        };
     }
 
     async Task LoadSourceAsync(PlaylistSource src)
@@ -74,14 +92,30 @@ public partial class MainWindow : Window
         try
         {
             var url = ch.StreamUrl;
-            if (ch.StalkerCmd != null && _stalker != null) url = await _stalker.CreateLinkAsync(ch.StalkerCmd);
-            using var media = new Media(_lib, new Uri(url));
-            _player.Play(media);
-            StatusText.Text = ch.Group;
+            if (ch.StalkerCmd != null && _stalker != null)
+                url = await _stalker.CreateLinkAsync(ch.StalkerCmd);
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != "rtsp"))
+                throw new InvalidOperationException("Adresse de flux invalide.");
+
+            _player.Stop();
+            _currentMedia?.Dispose();
+
+            var media = new Media(_lib, uri);
+            media.AddOption(":network-caching=1500");
+            media.AddOption(":http-reconnect");
+            media.AddOption(":no-video-title-show");
+            media.AddOption(":http-user-agent=VLC/3.0.20 LibVLC/3.0.20");
+            _currentMedia = media;
+
+            if (!_player.Play(media))
+                throw new InvalidOperationException("Le lecteur a refusé ce flux.");
+            StatusText.Text = "Connexion au flux…";
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Erreur : " + ex.Message;
+            StatusText.Text = "Échec de lecture : " + ex.Message;
         }
     }
 
