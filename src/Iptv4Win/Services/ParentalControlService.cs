@@ -23,7 +23,6 @@ public sealed class ParentalControlService
     {
         public string Salt { get; set; } = "";
         public string PinHash { get; set; } = "";
-        public bool Enabled { get; set; } = true;
     }
 
     Settings _settings;
@@ -57,7 +56,6 @@ public sealed class ParentalControlService
         var hash = Rfc2898DeriveBytes.Pbkdf2(pin, salt, Iterations, HashAlgorithmName.SHA256, HashSize);
         _settings.Salt = Convert.ToBase64String(salt);
         _settings.PinHash = Convert.ToBase64String(hash);
-        _settings.Enabled = true;
         Save();
     }
 
@@ -76,7 +74,6 @@ public sealed class ParentalControlService
 
     public bool IsAdult(Channel channel)
     {
-        if (!_settings.Enabled) return false;
         return LooksAdult(channel.Name) || LooksAdult(channel.Group);
     }
 
