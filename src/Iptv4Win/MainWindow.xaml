@@ -74,6 +74,9 @@
           <StackPanel Orientation="Horizontal">
             <Button Content="Précédente" Click="BtnPrevious_Click" Margin="0,0,8,0"/>
             <Button Content="Suivante" Click="BtnNext_Click" Margin="0,0,10,0"/>
+            <Button Content="−" Click="BtnVolumeDown_Click" ToolTip="Diminuer le volume" Margin="0,0,4,0" MinWidth="34"/>
+            <TextBlock x:Name="VolumeText" Text="100 %" VerticalAlignment="Center" MinWidth="48" TextAlignment="Center" Margin="0,0,4,0"/>
+            <Button Content="+" Click="BtnVolumeUp_Click" ToolTip="Augmenter le volume" Margin="0,0,8,0" MinWidth="34"/>
             <Button Content="Muet" Click="BtnMute_Click" Margin="0,0,10,0"/>
             <Button Content="Contrôle parental" Click="BtnParental_Click" Margin="0,0,10,0"/>
             <Button Content="Plein écran (F11)" Click="BtnFull_Click"/>
