@@ -106,8 +106,21 @@ public partial class MainWindow : Window
         CountText.Text = $"{list.Count} chaînes";
     }
 
+    static bool IsAdultChannel(Channel ch)
+    {
+        var text = (ch.Name + " " + ch.Group).ToLowerInvariant();
+        return System.Text.RegularExpressions.Regex.IsMatch(text,
+            @"(^|[^a-z0-9])(adult|adulte|18\+|xxx|porn|erotic|erotique|hot)([^a-z0-9]|$)");
+    }
+
     async Task PlayAsync(Channel ch)
     {
+        if (IsAdultChannel(ch) && !ParentControlWindow.Authorize(this))
+        {
+            StatusText.Text = "Chaîne bloquée par le contrôle parental.";
+            ChannelList.SelectedItem = null;
+            return;
+        }
         NowName.Text = ch.Name;
         StatusText.Text = "Connexion au flux…";
         BufferProgress.Value = 0;
@@ -185,6 +198,24 @@ public partial class MainWindow : Window
     }
 
     async void BtnPlaylists_Click(object sender, RoutedEventArgs e) => await OpenPlaylistsAsync();
+
+    void PlayAdjacent(int delta)
+    {
+        var index = ChannelList.SelectedIndex;
+        if (index < 0) index = delta > 0 ? -1 : ChannelList.Items.Count;
+        var next = index + delta;
+        if (next >= 0 && next < ChannelList.Items.Count)
+            ChannelList.SelectedIndex = next;
+    }
+
+    void BtnPrevious_Click(object sender, RoutedEventArgs e) => PlayAdjacent(-1);
+    void BtnNext_Click(object sender, RoutedEventArgs e) => PlayAdjacent(1);
+    void BtnParental_Click(object sender, RoutedEventArgs e)
+    {
+        if (ParentControlWindow.Configure(this))
+            StatusText.Text = "Contrôle parental configuré.";
+    }
+
     void BtnMute_Click(object sender, RoutedEventArgs e) => _player.Mute = !_player.Mute;
     void BtnFull_Click(object sender, RoutedEventArgs e) => ToggleFullscreen();
 
