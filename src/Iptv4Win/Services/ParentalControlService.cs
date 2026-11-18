@@ -44,9 +44,6 @@ public sealed class ParentalControlService
 
     public bool IsConfigured => !string.IsNullOrEmpty(_settings.Salt)
         && !string.IsNullOrEmpty(_settings.PinHash);
-
-    public bool IsEnabled => _settings.Enabled;
-
     public void SetPin(string pin)
     {
         if (pin.Length is < 4 or > 6 || pin.Any(c => c < '0' || c > '9'))
