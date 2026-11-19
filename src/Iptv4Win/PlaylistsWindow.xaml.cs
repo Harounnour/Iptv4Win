@@ -41,6 +41,7 @@ public partial class PlaylistsWindow : Window
         if(s.Name.Length==0 || s.Url.Length==0){Status.Text="Le nom et l'adresse sont obligatoires.";return false;}
         if(s.Type==PlaylistType.Xtream && (s.Username.Length==0||s.Password.Length==0)){Status.Text="Nom d'utilisateur et mot de passe obligatoires.";return false;}
         if(s.Type==PlaylistType.Stalker && !System.Text.RegularExpressions.Regex.IsMatch(s.Mac, @"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")){Status.Text="Adresse MAC invalide. Format attendu : 00:1A:79:XX:XX:XX.";return false;}
+        if(s.Type==PlaylistType.Stalker && s.IpAddress.Length>0 && !System.Net.IPAddress.TryParse(s.IpAddress, out _)){Status.Text="Adresse IP invalide : utilisez une adresse IPv4 ou IPv6.";return false;}
         if(s.Type==PlaylistType.Stalker && (!Uri.TryCreate(s.Url, UriKind.Absolute, out var portal) || (portal.Scheme!="http" && portal.Scheme!="https"))){Status.Text="URL du portail invalide : utilisez une adresse HTTP ou HTTPS.";return false;}
         return true;
     }
