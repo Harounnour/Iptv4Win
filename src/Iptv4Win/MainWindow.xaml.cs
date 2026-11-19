@@ -123,16 +123,59 @@ public partial class MainWindow : Window
             {media.AddOption(":http-referrer="+_stalker.PlaybackReferer);media.AddOption(":http-cookie="+_stalker.PlaybackCookie);}
             media.AddOption(":http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
             _currentMedia=media;
-            if(!_player.Play(media))throw new InvalidOperationException("Le lecteur a refusé ce flux.");
+            if(!_player.Play(media))
+            {
+                StatusText.Text="Le lecteur intégré a refusé le flux. Tentative via mpv…";
+                await LaunchMpvAsync(ch,url);
+                return;
+            }
             StatusText.Text="Connexion au flux…";
         }
         catch(Exception ex){BufferProgress.Visibility=Visibility.Collapsed;StatusText.Text="Échec de lecture : "+ex.Message;}
     }
     static string? FindMpv()
     {
-        var candidates=new List<string>{Path.Combine(AppContext.BaseDirectory,"mpv.exe"),Path.Combine(AppContext.BaseDirectory,"tools","mpv","mpv.exe"),Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"mpv","mpv.exe"),Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),"mpv","mpv.exe")};
-        foreach(var dir in (Environment.GetEnvironmentVariable("PATH")??"").Split(Path.PathSeparator,StringSplitOptions.RemoveEmptyEntries))candidates.Add(Path.Combine(dir,"mpv.exe"));
+        var candidates=new List<string>
+        {
+            Path.Combine(AppContext.BaseDirectory,"mpv.exe"),
+            Path.Combine(AppContext.BaseDirectory,"tools","mpv","mpv.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"mpv","mpv.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),"mpv","mpv.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","mpv","mpv.exe")
+        };
+        var configured=Environment.GetEnvironmentVariable("MPV_PATH");
+        if(!string.IsNullOrWhiteSpace(configured))candidates.Insert(0,configured.Trim().Trim('"'));
+        foreach(var dir in (Environment.GetEnvironmentVariable("PATH")??"").Split(Path.PathSeparator,StringSplitOptions.RemoveEmptyEntries))
+            candidates.Add(Path.Combine(dir,"mpv.exe"));
         return candidates.FirstOrDefault(File.Exists);
+    }
+    async Task LaunchMpvAsync(Channel ch,string url)
+    {
+        if(!Uri.TryCreate(url,UriKind.Absolute,out var uri)||(uri.Scheme!="http"&&uri.Scheme!="https"&&uri.Scheme!="rtsp"))
+            throw new InvalidOperationException("Adresse de flux invalide : le portail n'a pas fourni de lien HTTP, HTTPS ou RTSP.");
+        var mpv=FindMpv();
+        if(mpv==null)
+            throw new FileNotFoundException("mpv.exe introuvable. Installez mpv pour Windows, placez mpv.exe à côté de IPTV4Win ou définissez MPV_PATH.");
+        var start=new ProcessStartInfo(mpv){UseShellExecute=false,WorkingDirectory=Path.GetDirectoryName(mpv)??AppContext.BaseDirectory};
+        start.ArgumentList.Add("--force-window=yes");
+        start.ArgumentList.Add("--cache=yes");
+        start.ArgumentList.Add("--demuxer-readahead-secs=20");
+        start.ArgumentList.Add("--network-timeout=30");
+        start.ArgumentList.Add("--rtsp-transport=tcp");
+        start.ArgumentList.Add("--no-terminal");
+        var headers=new List<string>();
+        if(ch.StalkerCmd!=null&&_stalker!=null)
+        {
+            start.ArgumentList.Add("--user-agent="+_stalker.PlaybackUserAgent);
+            start.ArgumentList.Add("--referrer="+_stalker.PlaybackReferer);
+            headers.AddRange(_stalker.PlaybackHeaders);
+        }
+        else headers.Add("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
+        if(headers.Count>0)start.ArgumentList.Add("--http-header-fields="+string.Join(",",headers));
+        // ArgumentList preserves the complete URL, including query strings and ampersands.
+        start.ArgumentList.Add(uri.AbsoluteUri);
+        var process=Process.Start(start)??throw new InvalidOperationException("Windows n'a pas pu démarrer mpv.");
+        StatusText.Text=$"Flux transmis à mpv (PID {process.Id}).";
     }
     async void BtnExternalMpv_Click(object sender,RoutedEventArgs e)
     {
@@ -141,17 +184,10 @@ public partial class MainWindow : Window
         if(IsAdultChannel(ch)){StatusText.Text="Les chaînes classées comme adultes ne peuvent pas être ouvertes dans un lecteur externe.";return;}
         try
         {
+            StatusText.Text="Préparation du flux pour mpv…";
             var url=await ResolveStreamAsync(ch);
-            if(!Uri.TryCreate(url,UriKind.Absolute,out var uri)||(uri.Scheme!="http"&&uri.Scheme!="https"&&uri.Scheme!="rtsp"))throw new InvalidOperationException("Adresse de flux invalide.");
-            var mpv=FindMpv();
-            if(mpv==null){StatusText.Text="mpv introuvable. Installez mpv pour Windows ou placez mpv.exe à côté du programme.";return;}
-            var start=new ProcessStartInfo(mpv){UseShellExecute=false};
-            start.ArgumentList.Add("--cache=yes");start.ArgumentList.Add("--demuxer-readahead-secs=10");start.ArgumentList.Add("--network-timeout=30");start.ArgumentList.Add("--rtsp-transport=tcp");start.ArgumentList.Add("--force-window=yes");
-            var ua=ch.StalkerCmd!=null&&_stalker!=null?_stalker.PlaybackUserAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
-            var headers=new List<string>{"User-Agent: "+ua};
-            if(ch.StalkerCmd!=null&&_stalker!=null){headers.Add("Referer: "+_stalker.PlaybackReferer);headers.Add("Cookie: "+_stalker.PlaybackCookie);}
-            start.ArgumentList.Add("--http-header-fields="+string.Join(",",headers));
-            start.ArgumentList.Add(url);Process.Start(start);StatusText.Text="Flux envoyé au lecteur mpv externe.";
+            _currentStreamUrl=url;
+            await LaunchMpvAsync(ch,url);
         }
         catch(Exception ex){StatusText.Text="Impossible d'ouvrir mpv : "+ex.Message;}
     }
