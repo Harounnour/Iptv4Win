@@ -6,6 +6,7 @@
   <Grid>
     <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <DockPanel Background="{StaticResource Panel}">
+      <Button DockPanel.Dock="Top" Content="← Retour aux chaînes" HorizontalContentAlignment="Left" Padding="14,12" Margin="10,10,10,4" Click="Back_Click"/>
       <Button DockPanel.Dock="Bottom" Content="+ Ajouter une playlist" Margin="14" Click="Add_Click"/>
       <ListBox x:Name="SavedList" Background="Transparent" BorderThickness="0" Margin="0,12,0,0" DisplayMemberPath="Display" SelectionChanged="Saved_SelectionChanged"/>
     </DockPanel>
