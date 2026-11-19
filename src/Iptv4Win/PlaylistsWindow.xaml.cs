@@ -20,14 +20,14 @@ public partial class PlaylistsWindow : Window
     {
         _cur=s; TxtName.Text=s.Name; TxtUrl.Text=s.Url; TxtUser.Text=s.Username; TxtPass.Password=s.Password;
         TxtMac.Text=s.Mac; TxtEpg.Text=s.EpgUrl;
-        TxtSerial.Text=s.SerialNumber; TxtDeviceId.Text=s.DeviceId; TxtDeviceId2.Text=s.DeviceId2;
+        TxtSerial.Text=s.SerialNumber; TxtDeviceId.Text=s.DeviceId; TxtDeviceId2.Text=s.DeviceId2; TxtIpAddress.Text=s.IpAddress;
         RbM3u.IsChecked=s.Type==PlaylistType.M3U; RbXtream.IsChecked=s.Type==PlaylistType.Xtream; RbStalker.IsChecked=s.Type==PlaylistType.Stalker;
         ApplyType(); Status.Text="";
     }
     PlaylistType CurrentType() => RbXtream.IsChecked==true ? PlaylistType.Xtream : RbStalker.IsChecked==true ? PlaylistType.Stalker : PlaylistType.M3U;
     PlaylistSource Read() => new() { Id=_cur.Id, Name=TxtName.Text.Trim(), Type=CurrentType(), Url=TxtUrl.Text.Trim(),
         Username=TxtUser.Text.Trim(), Password=TxtPass.Password, Mac=TxtMac.Text.Trim(), EpgUrl=TxtEpg.Text.Trim(),
-        SerialNumber=TxtSerial.Text.Trim(), DeviceId=TxtDeviceId.Text.Trim(), DeviceId2=TxtDeviceId2.Text.Trim() };
+        SerialNumber=TxtSerial.Text.Trim(), DeviceId=TxtDeviceId.Text.Trim(), DeviceId2=TxtDeviceId2.Text.Trim(), IpAddress=TxtIpAddress.Text.Trim() };
     void ApplyType()
     {
         if (XtreamPanel==null || StalkerPanel==null || EpgPanel==null || LblUrl==null) return;
