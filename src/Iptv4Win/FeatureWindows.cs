@@ -120,7 +120,7 @@ public sealed class QuranPanel : UserControl, IDisposable
         for(var i=0;i<Surahs.Length;i++)_surah.Items.Add($"{i+1:000} — {Surahs[i]}");
         _surah.SelectedIndex=0;
         var close=new Button{Content="← Retour au programme",Padding=new Thickness(14,8,14,8),HorizontalAlignment=HorizontalAlignment.Left};
-        close.Click+=(_,_)=>CloseRequested?.Invoke();
+        close.Click+=(_,_)=>{Stop();CloseRequested?.Invoke();};
         var buttons=new WrapPanel{HorizontalAlignment=HorizontalAlignment.Center};
         AddButton(buttons,"◀ السابق",()=>Move(-1));AddButton(buttons,"▶ تشغيل",()=>PlaySelected());AddButton(buttons,"Ⅱ إيقاف مؤقت",()=>_audio.Pause());AddButton(buttons,"■ إيقاف",Stop);AddButton(buttons,"التالي ▶",()=>Move(1));
         var panel=new StackPanel{Margin=new Thickness(30),MaxWidth=1100,HorizontalAlignment=HorizontalAlignment.Center};
@@ -133,12 +133,21 @@ public sealed class QuranPanel : UserControl, IDisposable
         _reciter.SelectionChanged+=async(_,_)=>await LoadSelectedSurah();
         _surah.SelectionChanged+=async(_,_)=>{if(IsLoaded&&_reciter.SelectedItem!=null)await LoadSelectedSurah();};
         _sync.Tick+=(_,_)=>SyncVerse();
-        _audio.Playing+=(_,_)=>Dispatcher.BeginInvoke(()=>_status.Text="التلاوة جارية — يتم تحديث الآية تلقائياً");
-        _audio.EncounteredError+=(_,_)=>Dispatcher.BeginInvoke(()=>_status.Text="تعذر تشغيل التلاوة. تحقق من الاتصال أو جرّب قارئاً آخر.");
+        _audio.Playing+=Audio_Playing;
+        _audio.EncounteredError+=Audio_EncounteredError;
         Loaded+=async(_,_)=>await LoadReciters();
-        Unloaded+=(_,_)=>Stop();
     }
     static void AddButton(Panel panel,string label,Action action){var b=new Button{Content=label,Padding=new Thickness(14,9,14,9),Margin=new Thickness(5)};b.Click+=(_,_)=>action();panel.Children.Add(b);}
+    void Audio_Playing(object? sender,EventArgs e)
+    {
+        if(_disposed)return;
+        Dispatcher.BeginInvoke(()=>{if(!_disposed)_status.Text="التلاوة جارية — يتم تحديث الآية تلقائياً";});
+    }
+    void Audio_EncounteredError(object? sender,EventArgs e)
+    {
+        if(_disposed)return;
+        Dispatcher.BeginInvoke(()=>{if(!_disposed)_status.Text="تعذر تشغيل التلاوة. تحقق من الاتصال أو جرّب قارئاً آخر.";});
+    }
     async Task LoadReciters()
     {
         try
@@ -192,9 +201,24 @@ public sealed class QuranPanel : UserControl, IDisposable
     }
     async void PlaySelected(){if(_media==null)await LoadSelectedSurah();else{_audio.Play();_sync.Start();}}
     void Move(int delta){var next=_surah.SelectedIndex+delta;if(next>=0&&next<Surahs.Length)_surah.SelectedIndex=next;}
-    void Stop(){_sync.Stop();_audio.Stop();_lastVerse=-1;}
+    void Stop()
+    {
+        _sync.Stop();
+        _lastVerse=-1;
+        if(_disposed)return;
+        try{_audio.Stop();}catch(ObjectDisposedException){}catch(InvalidOperationException){}
+    }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;Stop();_media?.Dispose();_audio.Dispose();_lib.Dispose();
+        if(_disposed)return;
+        _disposed=true;
+        _sync.Stop();
+        _audio.Playing-=Audio_Playing;
+        _audio.EncounteredError-=Audio_EncounteredError;
+        try{_audio.Stop();}catch{}
+        try{_media?.Dispose();}catch{}
+        _media=null;
+        try{_audio.Dispose();}catch{}
+        try{_lib.Dispose();}catch{}
     }
 }
