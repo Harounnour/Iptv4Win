@@ -18,12 +18,14 @@ public sealed class StalkerClientTests
     public async Task FallsBackToPortalPhpAndLoadsChannels()
     {
         var requests = new List<string>();
+        var ipHeaders = new List<string>();
         var handler = new FakeHandler(request =>
         {
             var url = request.RequestUri!.ToString();
             requests.Add(url);
+            if (request.Headers.TryGetValues("X-Device-IP", out var ipValues)) ipHeaders.AddRange(ipValues);
             if (url.Contains("/server/load.php", StringComparison.OrdinalIgnoreCase))
-                return new HttpResponseMessage(HttpStatusCode.NotFound);
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized);
             var query = request.RequestUri.Query;
             var json = query.Contains("handshake") ? """{"js":{"token":"unit-test-token"}}"""
                 : query.Contains("get_profile") ? """{"js":{"id":"device"}}"""
@@ -36,7 +38,7 @@ public sealed class StalkerClientTests
         using var client = new StalkerClient(new PlaylistSource
         {
             Type=PlaylistType.Stalker, Url="http://portal.example/c/", Mac="00:1A:79:AA:BB:CC",
-            SerialNumber="SERIAL", DeviceId="DEVICE1", DeviceId2="DEVICE2"
+            SerialNumber="SERIAL", DeviceId="DEVICE1", DeviceId2="DEVICE2", IpAddress="192.0.2.15"
         }, http);
 
         var channels = await client.GetChannelsAsync();
@@ -45,6 +47,7 @@ public sealed class StalkerClientTests
         Assert.Equal("News HD", channels[0].Name);
         Assert.Equal("News", channels[0].Group);
         Assert.Contains(requests, x => x.Contains("/portal.php", StringComparison.OrdinalIgnoreCase) && x.Contains("handshake"));
+        Assert.Contains("192.0.2.15", ipHeaders);
     }
 
     private sealed class FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler
