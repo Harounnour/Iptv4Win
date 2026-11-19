@@ -11,6 +11,9 @@ public class PlaylistSource
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
     public string Mac { get; set; } = "";
+    public string SerialNumber { get; set; } = "";
+    public string DeviceId { get; set; } = "";
+    public string DeviceId2 { get; set; } = "";
     public string EpgUrl { get; set; } = "";
     public string Display => $"{(string.IsNullOrWhiteSpace(Name) ? "Sans nom" : Name)}  ·  {Type}";
 }
