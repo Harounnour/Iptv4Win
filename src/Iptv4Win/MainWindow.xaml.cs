@@ -50,7 +50,7 @@ public partial class MainWindow : Window
             var src=_store.Items.FirstOrDefault(x=>x.Id==_store.LastUsedId)??_store.Items.FirstOrDefault();
             if(src==null)await OpenPlaylistsAsync();else await LoadSourceAsync(src);
         };
-        Closed += (_, _) => { _player.Stop();_currentMedia?.Dispose();_player.Dispose();_lib.Dispose(); };
+        Closed += (_, _) => { _stalker?.Dispose(); _player.Stop();_currentMedia?.Dispose();_player.Dispose();_lib.Dispose(); };
     }
 
     async Task LoadSourceAsync(PlaylistSource src)
@@ -58,7 +58,8 @@ public partial class MainWindow : Window
         StatusText.Text="Chargement de la playlist…";
         try
         {
-            var r=await ChannelLoader.LoadAsync(src);_all=r.Channels;_stalker=r.Stalker;_xtream=r.Xtream;
+            var r=await ChannelLoader.LoadAsync(src);_stalker?.Dispose();_all=r.Channels;_stalker=r.Stalker;_xtream=r.Xtream;
+            _store.LastUsedId=src.Id;_store.Save();
             var groups=new List<string>{AllGroups,LiveGroup,SeriesGroup,FilmsGroup};
             groups.AddRange(_all.Select(c=>c.Group).Where(g=>!string.IsNullOrWhiteSpace(g)).Distinct().OrderBy(g=>g));
             GroupList.ItemsSource=groups;GroupList.SelectedIndex=0;StatusText.Text=$"{src.Name} : {_all.Count} chaînes";
