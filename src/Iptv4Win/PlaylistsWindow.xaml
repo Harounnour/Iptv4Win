@@ -25,6 +25,9 @@
         </StackPanel>
         <StackPanel x:Name="StalkerPanel">
           <TextBlock Text="Adresse MAC (00:1A:79:XX:XX:XX)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtMac" Margin="0,4,0,12"/>
+          <TextBlock Text="Numéro de série (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtSerial" Margin="0,4,0,12"/>
+          <TextBlock Text="Device ID (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtDeviceId" Margin="0,4,0,12"/>
+          <TextBlock Text="Device ID2 (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtDeviceId2" Margin="0,4,0,12"/>
         </StackPanel>
         <StackPanel x:Name="EpgPanel">
           <TextBlock Text="URL du guide EPG (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtEpg" Margin="0,4,0,12"/>
