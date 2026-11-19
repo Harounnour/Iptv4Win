@@ -5,14 +5,16 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  build:
+  test-and-build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish
+      - name: Run unit tests
+        run: dotnet test tests/Iptv4Win.Tests/Iptv4Win.Tests.csproj -c Release
+      - name: Publish Windows x64
         run: dotnet publish src/Iptv4Win -c Release -r win-x64 --self-contained -o publish
       - uses: actions/upload-artifact@v4
         with:
