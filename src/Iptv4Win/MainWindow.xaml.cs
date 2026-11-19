@@ -184,13 +184,24 @@ public partial class MainWindow : Window
     void SortBox_SelectionChanged(object sender,SelectionChangedEventArgs e)=>Refresh();
     async void ChannelList_SelectionChanged(object sender,SelectionChangedEventArgs e){if(ChannelList.SelectedItem is Channel ch)await PlayAsync(ch);}
     async void BtnPlaylists_Click(object sender,RoutedEventArgs e)=>await OpenPlaylistsAsync();
-    void BtnWeather_Click(object sender,RoutedEventArgs e)=>new WeatherWindow{Owner=this}.ShowDialog();
+    void CloseFeature()
+    {
+        if(FeatureHost.Content is QuranPanel quran)quran.Dispose();
+        FeatureHost.Content=null;FeatureHost.Visibility=Visibility.Collapsed;
+    }
+    void BtnWeather_Click(object sender,RoutedEventArgs e)
+    {
+        CloseFeature();
+        var panel=new WeatherPanel();panel.CloseRequested+=CloseFeature;
+        FeatureHost.Content=panel;FeatureHost.Visibility=Visibility.Visible;
+    }
     void BtnQuran_Click(object sender,RoutedEventArgs e)
     {
+        CloseFeature();
         _player.Stop();_currentMedia?.Dispose();_currentMedia=null;BufferProgress.Visibility=Visibility.Collapsed;
         StatusText.Text="Lecture TV arrêtée — lecture du Coran.";
-        new QuranWindow{Owner=this}.ShowDialog();
-        StatusText.Text="Lecture TV arrêtée.";
+        var panel=new QuranPanel();panel.CloseRequested+=()=>{CloseFeature();StatusText.Text="Lecture TV arrêtée.";};
+        FeatureHost.Content=panel;FeatureHost.Visibility=Visibility.Visible;
     }
     void PlayAdjacent(int delta)
     {
