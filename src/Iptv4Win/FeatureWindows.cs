@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using VlcMediaPlayer = LibVLCSharp.Shared.MediaPlayer;
 using System.Windows.Threading;
 using LibVLCSharp.Shared;
 
@@ -97,7 +98,7 @@ public sealed class QuranPanel : UserControl, IDisposable
     readonly TextBlock _verseNumber=new(){FontSize=16,TextAlignment=TextAlignment.Center,Foreground=Brushes.LightGray};
     readonly TextBlock _status=new(){FontSize=14,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,14,0,0),Foreground=Brushes.LightGray};
     readonly LibVLC _lib=new("--no-video","--quiet","--network-caching=1500","--file-caching=1500");
-    readonly MediaPlayer _audio;
+    readonly VlcMediaPlayer _audio;
     readonly DispatcherTimer _sync=new(){Interval=TimeSpan.FromMilliseconds(250)};
     Media? _media;
     List<Reciter> _reciters=new();
@@ -107,7 +108,7 @@ public sealed class QuranPanel : UserControl, IDisposable
     public event Action? CloseRequested;
     public QuranPanel()
     {
-        _audio=new MediaPlayer(_lib){Volume=100,Mute=false};
+        _audio=new VlcMediaPlayer(_lib){Volume=100,Mute=false};
         Background=new SolidColorBrush(Color.FromRgb(15,18,24));Foreground=Brushes.White;
         for(var i=0;i<Surahs.Length;i++)_surah.Items.Add($"{i+1:000} — {Surahs[i]}");
         _surah.SelectedIndex=0;
