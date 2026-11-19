@@ -27,11 +27,24 @@ public sealed class PlaylistStore
             CREATE TABLE IF NOT EXISTS playlists (
               id TEXT PRIMARY KEY, name TEXT NOT NULL, type INTEGER NOT NULL, url TEXT NOT NULL,
               username TEXT NOT NULL, password_enc TEXT NOT NULL, mac_enc TEXT NOT NULL,
-              epg_url TEXT NOT NULL, serial_enc TEXT NOT NULL, device_id_enc TEXT NOT NULL, device_id2_enc TEXT NOT NULL
+              epg_url TEXT NOT NULL, serial_enc TEXT NOT NULL, device_id_enc TEXT NOT NULL, device_id2_enc TEXT NOT NULL, ip_enc TEXT NOT NULL DEFAULT ''
             );
             CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             """;
         cmd.ExecuteNonQuery();
+        // Upgrade existing databases without losing saved playlists.
+        using var columns = connection.CreateCommand();
+        columns.CommandText = "PRAGMA table_info(playlists)";
+        using var reader = columns.ExecuteReader();
+        var hasIp = false;
+        while (reader.Read()) if (reader.GetString(1) == "ip_enc") hasIp = true;
+        reader.Close();
+        if (!hasIp)
+        {
+            using var alter = connection.CreateCommand();
+            alter.CommandText = "ALTER TABLE playlists ADD COLUMN ip_enc TEXT NOT NULL DEFAULT ''";
+            alter.ExecuteNonQuery();
+        }
         return connection;
     }
 
@@ -48,7 +61,7 @@ public sealed class PlaylistStore
                 if (Guid.TryParse(value, out var id)) store.LastUsedId = id;
             }
             using var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT id,name,type,url,username,password_enc,mac_enc,epg_url,serial_enc,device_id_enc,device_id2_enc FROM playlists ORDER BY rowid";
+            cmd.CommandText = "SELECT id,name,type,url,username,password_enc,mac_enc,epg_url,serial_enc,device_id_enc,device_id2_enc,ip_enc FROM playlists ORDER BY rowid";
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -58,7 +71,7 @@ public sealed class PlaylistStore
                     Id=id, Name=reader.GetString(1), Type=(PlaylistType)reader.GetInt32(2), Url=reader.GetString(3),
                     Username=reader.GetString(4), Password=Dec(reader.GetString(5)), Mac=Dec(reader.GetString(6)),
                     EpgUrl=reader.GetString(7), SerialNumber=Dec(reader.GetString(8)),
-                    DeviceId=Dec(reader.GetString(9)), DeviceId2=Dec(reader.GetString(10))
+                    DeviceId=Dec(reader.GetString(9)), DeviceId2=Dec(reader.GetString(10)), IpAddress=Dec(reader.GetString(11))
                 });
             }
             if (store.Items.Count == 0 && File.Exists(LegacyPath)) store.ImportLegacyJson();
@@ -113,8 +126,8 @@ public sealed class PlaylistStore
             using var cmd = db.CreateCommand();
             cmd.Transaction = tx;
             cmd.CommandText = """
-                INSERT INTO playlists(id,name,type,url,username,password_enc,mac_enc,epg_url,serial_enc,device_id_enc,device_id2_enc)
-                VALUES($id,$name,$type,$url,$username,$password,$mac,$epg,$serial,$device,$device2)
+                INSERT INTO playlists(id,name,type,url,username,password_enc,mac_enc,epg_url,serial_enc,device_id_enc,device_id2_enc,ip_enc)
+                VALUES($id,$name,$type,$url,$username,$password,$mac,$epg,$serial,$device,$device2,$ip)
                 """;
             cmd.Parameters.AddWithValue("$id", s.Id.ToString());
             cmd.Parameters.AddWithValue("$name", s.Name);
@@ -127,6 +140,7 @@ public sealed class PlaylistStore
             cmd.Parameters.AddWithValue("$serial", Enc(s.SerialNumber));
             cmd.Parameters.AddWithValue("$device", Enc(s.DeviceId));
             cmd.Parameters.AddWithValue("$device2", Enc(s.DeviceId2));
+            cmd.Parameters.AddWithValue("$ip", Enc(s.IpAddress));
             cmd.ExecuteNonQuery();
         }
         using (var state = db.CreateCommand())
