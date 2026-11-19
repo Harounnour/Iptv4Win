@@ -147,7 +147,7 @@ public sealed class StalkerClient : IDisposable
             {
                 while (await timer.WaitForNextTickAsync(ct))
                 {
-                    try { await GetAsync("type=stb&action=watchdog& JsHttpRequest=1-xml", ct); }
+                    try { await GetAsync("type=stb&action=watchdog", ct); }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
                     catch { try { await HandshakeAsync(ct); } catch { } }
                 }
