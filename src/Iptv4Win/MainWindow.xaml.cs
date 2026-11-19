@@ -222,8 +222,11 @@ public partial class MainWindow : Window
     async void BtnPlaylists_Click(object sender,RoutedEventArgs e)=>await OpenPlaylistsAsync();
     void CloseFeature()
     {
-        if(FeatureHost.Content is QuranPanel quran)quran.Dispose();
-        FeatureHost.Content=null;FeatureHost.Visibility=Visibility.Collapsed;
+        // Detach the visual first, then release native VLC resources.
+        var quran=FeatureHost.Content as QuranPanel;
+        FeatureHost.Content=null;
+        FeatureHost.Visibility=Visibility.Collapsed;
+        quran?.Dispose();
     }
     void BtnWeather_Click(object sender,RoutedEventArgs e)
     {
