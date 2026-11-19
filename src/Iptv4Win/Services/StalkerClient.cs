@@ -41,7 +41,7 @@ public sealed class StalkerClient : IDisposable
         _deviceId2 = source.DeviceId2.Trim();
 
         var path = portal.AbsolutePath.TrimEnd('/');
-        if (path.EndsWith("/server/load.php", StringComparison.OrdinalIgnoreCase)) path = path[..^17].TrimEnd('/');
+        if (path.EndsWith("/server/load.php", StringComparison.OrdinalIgnoreCase)) path = path[..^"/server/load.php".Length].TrimEnd('/');
         else if (path.EndsWith("/portal.php", StringComparison.OrdinalIgnoreCase)) path = path[..^11].TrimEnd('/');
         else if (path.EndsWith("/c", StringComparison.OrdinalIgnoreCase)) path = path[..^2].TrimEnd('/');
 
@@ -106,6 +106,7 @@ public sealed class StalkerClient : IDisposable
                 return js.Clone();
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden) { throw; }
             catch (Exception ex) { last = ex; }
         }
         throw new InvalidOperationException("Connexion au portail impossible via server/load.php et portal.php. Vérifiez l'adresse, le réseau et l'accès au portail.", last);
