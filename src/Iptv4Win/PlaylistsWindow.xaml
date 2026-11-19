@@ -28,7 +28,7 @@
           <TextBlock Text="Numéro de série (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtSerial" Margin="0,4,0,12"/>
           <TextBlock Text="Device ID (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtDeviceId" Margin="0,4,0,12"/>
           <TextBlock Text="Device ID2 (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtDeviceId2" Margin="0,4,0,12"/>
-          <TextBlock Text="Adresse IP (optionnelle)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtIpAddress" Margin="0,4,0,12" ToolTip="Adresse IPv4 ou IPv6 de l’appareil"/>
+          <TextBlock Text="Adresse IP (optionnelle — selon le portail)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtIpAddress" Margin="0,4,0,12" ToolTip="Adresse IPv4 ou IPv6 facultative ; transmise comme X-Device-IP si le portail la prend en charge"/>
         </StackPanel>
         <StackPanel x:Name="EpgPanel">
           <TextBlock Text="URL du guide EPG (optionnel)" Foreground="{StaticResource Muted}"/><TextBox x:Name="TxtEpg" Margin="0,4,0,12"/>
