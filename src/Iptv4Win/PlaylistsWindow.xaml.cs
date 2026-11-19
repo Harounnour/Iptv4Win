@@ -51,6 +51,7 @@ public partial class PlaylistsWindow : Window
         var i=_store.Items.FindIndex(x=>x.Id==s.Id); if(i>=0)_store.Items[i]=s;else _store.Items.Add(s);
         _cur=s; _store.Save(); RefreshList(); return true;
     }
+    void Back_Click(object sender,RoutedEventArgs e){SelectedSource=null;DialogResult=false;}
     void Type_Checked(object sender,RoutedEventArgs e)=>ApplyType();
     void Saved_SelectionChanged(object sender,SelectionChangedEventArgs e){if(SavedList.SelectedItem is PlaylistSource s)Bind(s);}
     void Add_Click(object sender,RoutedEventArgs e){SavedList.SelectedItem=null;Bind(new PlaylistSource());}
