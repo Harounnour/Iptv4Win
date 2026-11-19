@@ -12,7 +12,7 @@ public sealed class StalkerClient : IDisposable
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;
     private readonly string[] _loadCandidates;
-    private readonly string _mac, _referer, _origin, _serial, _deviceId, _deviceId2;
+    private readonly string _mac, _referer, _origin, _serial, _deviceId, _deviceId2, _ipAddress;
     private string _activeLoad;
     private string _token = "";
     private CancellationTokenSource? _keepAliveCts;
@@ -39,6 +39,7 @@ public sealed class StalkerClient : IDisposable
         _serial = source.SerialNumber.Trim();
         _deviceId = source.DeviceId.Trim();
         _deviceId2 = source.DeviceId2.Trim();
+        _ipAddress = source.IpAddress.Trim();
 
         var path = portal.AbsolutePath.TrimEnd('/');
         if (path.EndsWith("/server/load.php", StringComparison.OrdinalIgnoreCase)) path = path[..^"/server/load.php".Length].TrimEnd('/');
@@ -84,6 +85,8 @@ public sealed class StalkerClient : IDisposable
                 if (_serial.Length > 0) req.Headers.TryAddWithoutValidation("X-Serial-Number", _serial);
                 if (_deviceId.Length > 0) req.Headers.TryAddWithoutValidation("X-Device-ID", _deviceId);
                 if (_deviceId2.Length > 0) req.Headers.TryAddWithoutValidation("X-Device-ID2", _deviceId2);
+                // Optional portal-specific hint; it does not change the public source IP of this connection.
+                if (_ipAddress.Length > 0) req.Headers.TryAddWithoutValidation("X-Device-IP", _ipAddress);
                 if (_token.Length > 0) req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _token);
 
                 using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
@@ -106,10 +109,9 @@ public sealed class StalkerClient : IDisposable
                 return js.Clone();
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden) { throw; }
             catch (Exception ex) { last = ex; }
         }
-        throw new InvalidOperationException("Connexion au portail impossible via server/load.php et portal.php. Vérifiez l'adresse, le réseau et l'accès au portail.", last);
+        throw new InvalidOperationException($"Connexion au portail impossible via server/load.php et portal.php. Dernière réponse : {last?.Message ?? "inconnue"}. Vérifiez l'adresse, le réseau et l'autorisation du portail.", last);
     }
 
     private static string Str(JsonElement e, string name)
@@ -166,8 +168,16 @@ public sealed class StalkerClient : IDisposable
             foreach (var item in g.EnumerateArray()) genres[Str(item, "id")] = Str(item, "title");
 
         var all = await GetAsync("type=itv&action=get_all_channels", ct);
-        if (!all.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
-            throw new InvalidOperationException("Le portail Stalker n'a pas retourné de liste de chaînes.");
+        JsonElement data;
+        if (all.ValueKind == JsonValueKind.Array) data = all;
+        else if (all.ValueKind == JsonValueKind.Object && all.TryGetProperty("data", out data))
+        {
+            if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty("data", out var nestedData))
+                data = nestedData;
+        }
+        else data = default;
+        if (data.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException("Le portail Stalker n'a pas retourné de liste de chaînes (format de réponse inattendu).");
         var list = new List<Channel>(); var n = 1;
         foreach (var ch in data.EnumerateArray())
         {
