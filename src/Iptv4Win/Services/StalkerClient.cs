@@ -24,6 +24,25 @@ public sealed class StalkerClient : IDisposable
     public string PlaybackReferer => _referer;
     public string PlaybackUserAgent => Ua;
     public string PlaybackCookie => $"mac={_mac}; stb_lang=en; timezone=Europe/Paris" + (_token.Length > 0 ? $"; token={_token}" : "");
+    public IReadOnlyList<string> PlaybackHeaders
+    {
+        get
+        {
+            var headers = new List<string>
+            {
+                "Cookie: " + PlaybackCookie,
+                "X-User-Agent: Model: MAG250; Link: WiFi",
+                "Referer: " + _referer,
+                "Origin: " + _origin
+            };
+            if (_token.Length > 0) headers.Add("Authorization: Bearer " + _token);
+            if (_serial.Length > 0) headers.Add("X-Serial-Number: " + _serial);
+            if (_deviceId.Length > 0) headers.Add("X-Device-ID: " + _deviceId);
+            if (_deviceId2.Length > 0) headers.Add("X-Device-ID2: " + _deviceId2);
+            if (_ipAddress.Length > 0) headers.Add("X-Device-IP: " + _ipAddress);
+            return headers;
+        }
+    }
     public string ActiveEndpoint => _activeLoad;
 
     public StalkerClient(PlaylistSource source, HttpClient? httpClient = null)
