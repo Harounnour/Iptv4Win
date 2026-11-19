@@ -14,6 +14,7 @@ public class PlaylistSource
     public string SerialNumber { get; set; } = "";
     public string DeviceId { get; set; } = "";
     public string DeviceId2 { get; set; } = "";
+    public string IpAddress { get; set; } = "";
     public string EpgUrl { get; set; } = "";
     public string Display => $"{(string.IsNullOrWhiteSpace(Name) ? "Sans nom" : Name)}  ·  {Type}";
 }
