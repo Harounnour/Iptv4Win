@@ -350,7 +350,7 @@ public sealed class QuranPanel : UserControl, IDisposable
                 throw new InvalidOperationException("رابط ملف التلاوة غير صالح.");
 
             // The documented response property is 'timestamps' (not 'verse_timings').
-            if (!root.TryGetProperty("timestamps", out var timestamps) || timestamps.ValueKind != JsonValueKind.Array)
+            if (!audioFile.TryGetProperty("timestamps", out var timestamps) || timestamps.ValueKind != JsonValueKind.Array)
                 throw new InvalidOperationException("هذه التلاوة لا تتضمن توقيتات الآيات؛ اختر قارئاً آخر.");
 
             _verses = timestamps.EnumerateArray().Select(timing =>
