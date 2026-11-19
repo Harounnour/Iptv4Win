@@ -50,7 +50,7 @@ public partial class MainWindow : Window
             var src=_store.Items.FirstOrDefault(x=>x.Id==_store.LastUsedId)??_store.Items.FirstOrDefault();
             if(src==null)await OpenPlaylistsAsync();else await LoadSourceAsync(src);
         };
-        Closed += (_, _) => { _stalker?.Dispose(); _player.Stop();_currentMedia?.Dispose();_player.Dispose();_lib.Dispose(); };
+        Closed += (_, _) => { if(FeatureHost.Content is QuranPanel quran)quran.Dispose(); _stalker?.Dispose(); _player.Stop();_currentMedia?.Dispose();_player.Dispose();_lib.Dispose(); };
     }
 
     async Task LoadSourceAsync(PlaylistSource src)
