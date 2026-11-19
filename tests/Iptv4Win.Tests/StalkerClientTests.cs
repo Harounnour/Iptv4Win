@@ -1,6 +1,7 @@
 using System.Net;
 using Iptv4Win.Models;
 using Iptv4Win.Services;
+using Xunit;
 
 namespace Iptv4Win.Tests;
 
